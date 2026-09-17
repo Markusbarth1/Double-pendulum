@@ -1,4 +1,0 @@
-streamlit>=1.40
-numpy>=1.26
-sympy>=1.13
-matplotlib>=3.8
