@@ -1,0 +1,337 @@
+\documentclass[11pt,a4paper,fleqn]{article}
+\usepackage{cancel}
+\usepackage[left=1cm,right=1cm,top=1cm,bottom=1.8cm]{geometry}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\setlength{\mathindent}{0pt}
+\titlespacing*{\subsection}{0pt}{1.2cm}{0.4cm}
+
+\title{Double Pendulum Using Euler-Lagrange Equations and RK4}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This project studies the motion of a double pendulum using the Euler-Lagrange
+method to derive the equations of motion, followed by a fourth-order
+Runge-Kutta method (RK4) to solve the resulting system numerically.
+
+\section{Assumptions}
+
+\begin{itemize}
+    \item The masses are point masses.
+    \item The rods are rigid and massless.
+    \item The pendulum is ideal, with no loss from friction and no input from
+    external forces.
+\end{itemize}
+
+\newpage
+
+\section{Equations of Motion}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Screenshot 2026-09-16 183323.png}
+\end{figure}
+
+\subsection{Position}
+
+\[
+    x_1 = l_1 \sin(\theta_1)
+\]
+\[
+    y_1 = -l_1 \cos(\theta_1)
+\]
+\[
+    x_2 = l_1 \sin(\theta_1) + l_2 \sin(\theta_2)
+\]
+\[
+    y_2 = -l_1 \cos(\theta_1) - l_2 \cos(\theta_2)
+\]
+
+\subsection{Velocity}
+
+\[
+    \dot{x}_1 = l_1 \dot{\theta}_1 \cos(\theta_1)
+\]
+\[
+    \dot{y}_1 = l_1 \dot{\theta}_1 \sin(\theta_1)
+\]
+\[
+    \dot{x}_2 = l_1 \dot{\theta}_1 \cos(\theta_1)
+    + l_2 \dot{\theta}_2 \cos(\theta_2)
+\]
+\[
+    \dot{y}_2 = l_1 \dot{\theta}_1 \sin(\theta_1)
+    + l_2 \dot{\theta}_2 \sin(\theta_2)
+\]
+
+\newpage
+
+\subsection{Potential Energy}
+
+\[
+    V = m_1 g y_1 + m_2 g y_2
+\]
+
+Substituting \(y_1\) and \(y_2\) into the expression gives
+
+\[
+    V = m_1 g \left(-l_1 \cos(\theta_1)\right)
+    + m_2 g \left(-l_1 \cos(\theta_1) - l_2 \cos(\theta_2)\right)
+\]
+
+\[
+    V = -m_1 g l_1 \cos(\theta_1)
+    - m_2 g l_1 \cos(\theta_1)
+    - m_2 g l_2 \cos(\theta_2)
+\]
+
+\[
+    V = -(m_1 + m_2)g l_1 \cos(\theta_1)
+    - m_2 g l_2 \cos(\theta_2)
+\]
+
+\subsection{Kinetic Energy}
+
+\[
+    T = \frac{1}{2}m_1\left(\dot{x}_1^2 + \dot{y}_1^2\right)
+    + \frac{1}{2}m_2\left(\dot{x}_2^2 + \dot{y}_2^2\right)
+\]
+
+Substituting the velocities into the expression gives
+
+\[
+    T = \frac{1}{2}m_1 l_1^2 \dot{\theta}_1^2
+    \cancelto{1}{\left(\cos^2(\theta_1) + \sin^2(\theta_1)\right)}
+    + \frac{1}{2}m_2\left(\dot{x}_2^2 + \dot{y}_2^2\right)
+\]
+
+\[
+    T = \frac{1}{2}m_1 l_1^2 \dot{\theta}_1^2
+    + \frac{1}{2}m_2\left(
+    \left(l_1 \dot{\theta}_1 \cos(\theta_1)
+    + l_2 \dot{\theta}_2 \cos(\theta_2)\right)^2
+    + \left(l_1 \dot{\theta}_1 \sin(\theta_1)
+    + l_2 \dot{\theta}_2 \sin(\theta_2)\right)^2
+    \right)
+\]
+
+\[
+    \resizebox{\textwidth}{!}{$\displaystyle
+    T = \frac{1}{2}m_1 l_1^2 \dot{\theta}_1^2
+    + \frac{1}{2}m_2\left(
+    l_1^2 \dot{\theta}_1^2
+    \cancelto{1}{\left(\cos^2(\theta_1) + \sin^2(\theta_1)\right)}
+    + l_2^2 \dot{\theta}_2^2
+    \cancelto{1}{\left(\cos^2(\theta_2) + \sin^2(\theta_2)\right)}
+    + 2l_1l_2\dot{\theta}_1\dot{\theta}_2
+    \left(\cos(\theta_1)\cos(\theta_2)
+    + \sin(\theta_1)\sin(\theta_2)\right)
+    \right)$}
+\]
+
+\[
+    T = \frac{1}{2}m_1 l_1^2 \dot{\theta}_1^2
+    + \frac{1}{2}m_2\left(
+    l_1^2 \dot{\theta}_1^2
+    + l_2^2 \dot{\theta}_2^2
+    + 2l_1l_2\dot{\theta}_1\dot{\theta}_2
+    \cos(\theta_1 - \theta_2)
+    \right)
+\]
+
+\newpage
+
+\subsection{Lagrangian}
+
+\[
+    L = T - V
+\]
+
+Substituting \(T\) and \(V\) into the expression gives
+
+\[
+    L = \frac{1}{2}m_1 l_1^2 \dot{\theta}_1^2
+    + \frac{1}{2}m_2\left(l_1^2 \dot{\theta}_1^2
+    + l_2^2 \dot{\theta}_2^2
+    + 2l_1l_2\dot{\theta}_1\dot{\theta}_2 \cos(\theta_1 - \theta_2)\right)
+    - \left(-(m_1 + m_2)g l_1 \cos(\theta_1)
+    - m_2 g l_2 \cos(\theta_2)\right)
+\]
+
+\[
+    L = \frac{1}{2}m_1 l_1^2 \dot{\theta}_1^2
+    + \frac{1}{2}m_2\left(l_1^2 \dot{\theta}_1^2
+    + l_2^2 \dot{\theta}_2^2
+    + 2l_1l_2\dot{\theta}_1\dot{\theta}_2 \cos(\theta_1 - \theta_2)\right)
+    + (m_1 + m_2)g l_1 \cos(\theta_1)
+    + m_2 g l_2 \cos(\theta_2)
+\]
+
+\subsection{Euler-Lagrange Equation}
+
+\[
+    \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{q}_i}\right)
+    - \frac{\partial L}{\partial q_i} = 0
+\]
+
+\subsubsection{Solving for the First Generalized Coordinate}
+
+\[
+    q_1 = \theta_1
+\]
+
+\[
+    \frac{\partial L}{\partial \dot{\theta}_1}
+    = (m_1 + m_2)l_1^2\dot{\theta}_1
+    + m_2l_1l_2\dot{\theta}_2\cos(\theta_1 - \theta_2)
+\]
+
+\[
+    \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{\theta}_1}\right)
+    = (m_1 + m_2)l_1^2\ddot{\theta}_1
+    + m_2l_1l_2\left(
+    \ddot{\theta}_2\cos(\theta_1 - \theta_2)
+    - \dot{\theta}_2(\dot{\theta}_1 - \dot{\theta}_2)
+    \sin(\theta_1 - \theta_2)
+    \right)
+\]
+
+\[
+    \frac{\partial L}{\partial \theta_1}
+    = -m_2l_1l_2\dot{\theta}_1\dot{\theta}_2
+    \sin(\theta_1 - \theta_2)
+    - (m_1 + m_2)g l_1 \sin(\theta_1)
+\]
+
+\[
+    \resizebox{\textwidth}{!}{$\displaystyle
+    (m_1 + m_2)l_1^2\ddot{\theta}_1
+    + m_2l_1l_2\left(
+    \ddot{\theta}_2\cos(\theta_1 - \theta_2)
+    - \dot{\theta}_2(\dot{\theta}_1 - \dot{\theta}_2)
+    \sin(\theta_1 - \theta_2)
+    \right)
+    - \left(
+    -m_2l_1l_2\dot{\theta}_1\dot{\theta}_2
+    \sin(\theta_1 - \theta_2)
+    - (m_1 + m_2)g l_1 \sin(\theta_1)
+    \right) = 0$}
+\]
+
+\[
+    \ddot{\theta}_1 =
+    \frac{
+    -m_2l_1l_2\ddot{\theta}_2\cos(\theta_1 - \theta_2)
+    -m_2l_1l_2\dot{\theta}_2^2\sin(\theta_1 - \theta_2)
+    -(m_1 + m_2)g l_1\sin(\theta_1)
+    }{(m_1 + m_2)l_1^2}
+\]
+
+\subsubsection{Solving for the Second Generalized Coordinate}
+
+\[
+    q_2 = \theta_2
+\]
+
+\[
+    \frac{\partial L}{\partial \dot{\theta}_2}
+    = m_2l_2^2\dot{\theta}_2
+    + m_2l_1l_2\dot{\theta}_1\cos(\theta_1 - \theta_2)
+\]
+
+\[
+    \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{\theta}_2}\right)
+    = m_2l_2^2\ddot{\theta}_2
+    + m_2l_1l_2\left(
+    \ddot{\theta}_1\cos(\theta_1 - \theta_2)
+    - \dot{\theta}_1(\dot{\theta}_1 - \dot{\theta}_2)
+    \sin(\theta_1 - \theta_2)
+    \right)
+\]
+
+\[
+    \frac{\partial L}{\partial \theta_2}
+    = m_2l_1l_2\dot{\theta}_1\dot{\theta}_2
+    \sin(\theta_1 - \theta_2)
+    - m_2g l_2 \sin(\theta_2)
+\]
+
+\[
+    \resizebox{\textwidth}{!}{$\displaystyle
+    m_2l_2^2\ddot{\theta}_2
+    + m_2l_1l_2\left(
+    \ddot{\theta}_1\cos(\theta_1 - \theta_2)
+    - \dot{\theta}_1(\dot{\theta}_1 - \dot{\theta}_2)
+    \sin(\theta_1 - \theta_2)
+    \right)
+    - \left(
+    m_2l_1l_2\dot{\theta}_1\dot{\theta}_2
+    \sin(\theta_1 - \theta_2)
+    - m_2g l_2 \sin(\theta_2)
+    \right) = 0$}
+\]
+
+\[
+    \ddot{\theta}_2 =
+    \frac{
+    -l_1\ddot{\theta}_1\cos(\theta_1 - \theta_2)
+    + l_1\dot{\theta}_1^2\sin(\theta_1 - \theta_2)
+    - g\sin(\theta_2)
+    }{l_2}
+\]
+
+\subsection{RK4 Setup}
+
+The result is a system of two coupled differential equations, since the
+acceleration of one angle depends on the acceleration of the other angle. Before
+using RK4, the Python script rewrites the equations so that the accelerations
+are explicit.
+
+The expression for \(\ddot{\theta}_2\) is substituted into the expression for
+\(\ddot{\theta}_1\), which gives an equation for \(\ddot{\theta}_1\) depending
+only on the current angles and angular velocities. After \(\ddot{\theta}_1\) is
+known, it is inserted back into the second equation to find
+\(\ddot{\theta}_2\).
+
+This gives the correct setup for RK4: at each RK4 step, and at each intermediate
+stage, both accelerations are evaluated from the current state before advancing
+the angles and angular velocities together.
+
+\subsection{RK4 Method}
+
+The numerical state is written as
+\[
+    \mathbf{y} =
+    [\theta_1,\dot{\theta}_1,\theta_2,\dot{\theta}_2].
+\]
+
+The derivative of this state is
+\[
+    \frac{d\mathbf{y}}{dt} =
+    [\dot{\theta}_1,\ddot{\theta}_1,\dot{\theta}_2,\ddot{\theta}_2].
+\]
+
+The RK4 method advances this state forward in time by evaluating the derivative
+four times during each time step and combining the results.
+
+\subsection{Energy Check}
+
+Since the pendulum is assumed to be ideal, the total mechanical energy should be
+constant. The kinetic energy, potential energy, and their sum are therefore
+tracked during the simulation. Any change in the total energy is numerical
+drift from the RK4 approximation.
+
+\section{Conclusion}
+
+The Euler-Lagrange method was used to derive the coupled equations of motion for
+the double pendulum. These equations were then rewritten into a form suitable
+for numerical simulation and solved using RK4. Energy was also tracked to check
+how well the numerical solution conserved the ideal system energy.
+
+\end{document}
